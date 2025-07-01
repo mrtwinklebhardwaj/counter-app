@@ -8,23 +8,16 @@ const prisma = new PrismaClient();
 const app = express();
 const PORT = 5050;
 
+
 app.use(cors({
-    origin: function (origin, callback) {
-      const allowed = [
-        'http://localhost:5173',
-        'https://naam-jap.codeaurkahani.com',
-        'https://www.naam-jap.codeaurkahani.com',
-        'https://counter-app-zmdc.onrender.com/'
-      ];
-      if (!origin || allowed.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('CORS not allowed for this origin'));
-      }
-    },
+    origin: [
+      'https://www.naam-jap.codeaurkahani.com',
+      'https://naam-jap.codeaurkahani.com',
+    ],
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'x-user-id'],
   }));
+
   
   
 app.use(bodyParser.json());
