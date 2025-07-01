@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
+import properties from '../properties/properties';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,7 +13,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5050/login', {
+      const res = await fetch(properties.api.baseURL+'/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
