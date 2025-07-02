@@ -6,40 +6,43 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const app = express();
-const PORT = 5050;
+const PORT = process.env.PORT || 5050;
 
+// ✅ CORS config
+const corsOptions = {
+  origin: [
+    'https://naam-jap.codeaurkahani.com',
+    'https://www.naam-jap.codeaurkahani.com',
+  ],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'x-user-id'],
+  credentials: true,
+};
 
-app.use(cors({
-    origin: [
-      'https://www.naam-jap.codeaurkahani.com',
-      'https://naam-jap.codeaurkahani.com',
-    ],
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'x-user-id'],
-    credentials: true,
-  }));
+// ✅ Enable CORS for all requests
+app.use(cors(corsOptions));
 
-  
-  
+// ✅ Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
+
 app.use(bodyParser.json());
 
 // Default user setup
 app.get('/setup', async (req, res) => {
-    try {
-      const hashed = bcrypt.hashSync('admin', 10);
-      const user = await prisma.user.upsert({
-        where: { email: 'admin@example.com' },
-        update: {},
-        create: { email: 'admin@example.com', password: hashed },
-      });
-      console.log('User created or already exists:', user.email);
-      res.send('Default user created');
-    } catch (err) {
-      console.error('Error in /setup:', err);
-      res.status(500).send('Setup failed');
-    }
-  });
-  
+  try {
+    const hashed = bcrypt.hashSync('admin', 10);
+    const user = await prisma.user.upsert({
+      where: { email: 'admin@example.com' },
+      update: {},
+      create: { email: 'admin@example.com', password: hashed },
+    });
+    console.log('User created or already exists:', user.email);
+    res.send('Default user created');
+  } catch (err) {
+    console.error('Error in /setup:', err);
+    res.status(500).send('Setup failed');
+  }
+});
 
 // Login API
 app.post('/login', async (req, res) => {
@@ -82,22 +85,23 @@ app.post('/counter', async (req, res) => {
   res.json({ count: updated.count });
 });
 
+// Reset counter
 app.post('/counter/reset', async (req, res) => {
-    const userId = req.headers['x-user-id'];
-    const today = new Date().toISOString().split('T')[0];
-  
-    const existing = await prisma.counter.findFirst({ where: { userId, date: new Date(today) } });
-  
-    if (existing) {
-      await prisma.counter.update({
-        where: { id: existing.id },
-        data: { count: 0 },
-      });
-    }
-  
-    res.json({ message: 'Counter reset' });
-  });
+  const userId = req.headers['x-user-id'];
+  const today = new Date().toISOString().split('T')[0];
+
+  const existing = await prisma.counter.findFirst({ where: { userId, date: new Date(today) } });
+
+  if (existing) {
+    await prisma.counter.update({
+      where: { id: existing.id },
+      data: { count: 0 },
+    });
+  }
+
+  res.json({ message: 'Counter reset' });
+});
 
 app.listen(PORT, () => {
-  console.log(`Backend running at http://localhost:${PORT}`);
+  console.log(`Backend running on port ${PORT}`);
 });
