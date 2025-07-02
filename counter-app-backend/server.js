@@ -19,15 +19,17 @@ const corsOptions = {
   credentials: true,
 };
 
-// ✅ Enable CORS for all requests
 app.use(cors(corsOptions));
-
-// ✅ Handle preflight requests explicitly
-app.options('*', cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight requests
 
 app.use(bodyParser.json());
 
-// Default user setup
+// ✅ Root route to test Render live deployment
+app.get('/', (req, res) => {
+  res.send('✅ Naam-Jap Backend is Live!');
+});
+
+// ✅ /setup (create default user)
 app.get('/setup', async (req, res) => {
   try {
     const hashed = bcrypt.hashSync('admin', 10);
@@ -44,53 +46,67 @@ app.get('/setup', async (req, res) => {
   }
 });
 
-// Login API
+// ✅ /login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   const user = await prisma.user.findUnique({ where: { email } });
+
   if (!user || !bcrypt.compareSync(password, user.password)) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
+
   res.json({ userId: user.id });
 });
 
-// Get today's counter
+// ✅ /counter (GET)
 app.get('/counter', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const today = new Date().toISOString().split('T')[0];
-  let counter = await prisma.counter.findFirst({ where: { userId, date: new Date(today) } });
+
+  let counter = await prisma.counter.findFirst({
+    where: { userId, date: new Date(today) },
+  });
 
   if (!counter) {
-    counter = await prisma.counter.create({ data: { userId, date: new Date(today), count: 0 } });
+    counter = await prisma.counter.create({
+      data: { userId, date: new Date(today), count: 0 },
+    });
   }
 
   res.json({ count: counter.count });
 });
 
-// Increment counter
+// ✅ /counter (POST to increment)
 app.post('/counter', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const today = new Date().toISOString().split('T')[0];
-  let counter = await prisma.counter.findFirst({ where: { userId, date: new Date(today) } });
+
+  let counter = await prisma.counter.findFirst({
+    where: { userId, date: new Date(today) },
+  });
 
   if (!counter) {
-    counter = await prisma.counter.create({ data: { userId, date: new Date(today), count: 0 } });
+    counter = await prisma.counter.create({
+      data: { userId, date: new Date(today), count: 0 },
+    });
   }
 
   const updated = await prisma.counter.update({
     where: { id: counter.id },
-    data: { count: counter.count + 1 }
+    data: { count: counter.count + 1 },
   });
 
   res.json({ count: updated.count });
 });
 
-// Reset counter
+// ✅ /counter/reset
 app.post('/counter/reset', async (req, res) => {
   const userId = req.headers['x-user-id'];
   const today = new Date().toISOString().split('T')[0];
 
-  const existing = await prisma.counter.findFirst({ where: { userId, date: new Date(today) } });
+  const existing = await prisma.counter.findFirst({
+    where: { userId, date: new Date(today) },
+  });
 
   if (existing) {
     await prisma.counter.update({
@@ -102,6 +118,7 @@ app.post('/counter/reset', async (req, res) => {
   res.json({ message: 'Counter reset' });
 });
 
+// ✅ Start server
 app.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`);
+  console.log(`✅ Backend running on port ${PORT}`);
 });
