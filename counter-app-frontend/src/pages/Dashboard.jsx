@@ -78,11 +78,7 @@ const Dashboard = () => {
         );
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('userId');
-        window.location.href = '/';
-    };
-
+  
     const confirmReset = () => {
         handleReset();
 
@@ -90,6 +86,29 @@ const Dashboard = () => {
     };
 
     const unsyncedCount = parseInt(localStorage.getItem('unsyncedCount') || '0', 10);
+
+        const handleLogout = async () => {
+    try {
+        await apiInvoker.post(
+            properties.api.logout, // make sure this is set to '/logout' in your properties file
+            {},
+            () => {
+                console.log("✅ Logout successful");
+            },
+            (err) => {
+                console.error("❌ Logout failed:", err);
+            },
+            { 'x-user-id': userId }
+        );
+    } catch (err) {
+        console.error("Unexpected logout error:", err);
+    } finally {
+        localStorage.removeItem('userId');
+        localStorage.removeItem('localCount');
+        localStorage.removeItem('lastSyncedCount');
+        window.location.href = '/';
+    }
+};
 
     if (loading) {
         return (
@@ -101,6 +120,10 @@ const Dashboard = () => {
             </div>
         );
     }
+
+
+
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -131,7 +154,12 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Counter Card */}
                     <div className="lg:col-span-2">
-                        <div className="bg-white rounded-3xl shadow-xl p-8 text-center relative overflow-hidden">
+                        <div className="bg-white rounded-3xl shadow-xl p-8 text-center relative overflow-hidden touch-manipulation select-none"
+                            onClick={handleIncrement}
+                            role="button"
+                             onDoubleClick={(e) => e.preventDefault()}
+                            tabIndex={0}
+                            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleIncrement()}>
                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full -translate-y-16 translate-x-16 opacity-50"></div>
                             <div className="relative z-10">
                                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl mb-6">
@@ -142,28 +170,19 @@ const Dashboard = () => {
                                     {localCount.toLocaleString()}
                                 </div>
 
-                                {/* Action Buttons */}
-                                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                                    <button
-                                        onClick={handleIncrement}
-                                        disabled={syncing}
-                                        className="group relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-3"
-                                    >
-                                        <Plus className="w-6 h-6" />
-                                        <span>Increment</span>
-                                        {syncing && (
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                        )}
-                                    </button>
-
-                                    <button
-                                        onClick={() => setShowResetConfirm(true)}
-                                        className="group bg-white border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 px-8 py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center space-x-3"
-                                    >
-                                        <RotateCcw className="w-5 h-5" />
-                                        <span>Reset</span>
-                                    </button>
-
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">Synced Sets of 108</span>
+                                    <span className="font-bold text-blue-700">
+                                        {Math.floor(localCount / CHUNK_SIZE)}
+                                    </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div
+                                        className="bg-gradient-to-r from-blue-600 to-indigo-600 h-2 rounded-full transition-all duration-300"
+                                        style={{
+                                            width: `${Math.min(((localCount % CHUNK_SIZE) / CHUNK_SIZE) * 100, 100)}%`
+                                        }}
+                                    ></div>
                                 </div>
                             </div>
                         </div>
@@ -193,21 +212,9 @@ const Dashboard = () => {
                                     </span>
                                 </div>
 
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-600">Synced Sets of 108</span>
-                                    <span className="font-bold text-blue-700">
-                                        {Math.floor(localCount / CHUNK_SIZE)}
-                                    </span>
-                                </div>
+                                
 
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div
-                                        className="bg-gradient-to-r from-blue-600 to-indigo-600 h-2 rounded-full transition-all duration-300"
-                                        style={{
-                                            width: `${Math.min(((localCount % CHUNK_SIZE) / CHUNK_SIZE) * 100, 100)}%`
-                                        }}
-                                    ></div>
-                                </div>
+                                
                             </div>
                         </div>
                     </div>

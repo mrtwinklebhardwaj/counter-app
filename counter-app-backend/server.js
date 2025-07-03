@@ -127,29 +127,23 @@ app.get('/counter', async (req, res) => {
       });
     }
     
-    // Validate userId is a number
-    const userIdNum = parseInt(userId);
-    if (isNaN(userIdNum)) {
-      console.log('Invalid userId - not a number:', userId);
-      return res.status(400).json({ error: 'x-user-id must be a valid number' });
-    }
-    
-    console.log('Parsed userId:', userIdNum);
-    
+  if (typeof userId !== 'string' || userId.length < 5) {
+    return res.status(400).json({ error: 'x-user-id must be a valid string ID' });
+ }
     const today = new Date().toISOString().split('T')[0];
     console.log('Today date:', today, 'as Date object:', new Date(today));
     
     // Check if user exists
-    const user = await prisma.user.findUnique({ where: { id: userIdNum } });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      console.log('User not found with ID:', userIdNum);
+      console.log('User not found with ID:', userId);
       return res.status(404).json({ error: 'User not found' });
     }
     console.log('User found:', { id: user.id, email: user.email });
     
     let counter = await prisma.counter.findFirst({ 
       where: { 
-        userId: userIdNum, 
+        userId: userId, 
         date: new Date(today) 
       } 
     });
@@ -159,7 +153,7 @@ app.get('/counter', async (req, res) => {
       console.log('Creating new counter for today');
       counter = await prisma.counter.create({ 
         data: { 
-          userId: userIdNum, 
+          userId: userId, 
           date: new Date(today), 
           count: 0 
         } 
@@ -189,15 +183,15 @@ app.post('/counter', async (req, res) => {
       return res.status(400).json({ error: 'x-user-id header is required' });
     }
     
-    const userIdNum = parseInt(userId);
-    if (isNaN(userIdNum)) {
-      return res.status(400).json({ error: 'x-user-id must be a valid number' });
+   
+    if (typeof userId !== 'string' || userId.length < 5) {
+      return res.status(400).json({ error: 'x-user-id must be a valid string ID' });
     }
     
     const today = new Date().toISOString().split('T')[0];
     let counter = await prisma.counter.findFirst({ 
       where: { 
-        userId: userIdNum, 
+        userId: userId, 
         date: new Date(today) 
       } 
     });
@@ -205,7 +199,7 @@ app.post('/counter', async (req, res) => {
     if (!counter) {
       counter = await prisma.counter.create({ 
         data: { 
-          userId: userIdNum, 
+          userId: userId, 
           date: new Date(today), 
           count: 0 
         } 
@@ -237,15 +231,15 @@ app.post('/counter/reset', async (req, res) => {
       return res.status(400).json({ error: 'x-user-id header is required' });
     }
     
-    const userIdNum = parseInt(userId);
-    if (isNaN(userIdNum)) {
-      return res.status(400).json({ error: 'x-user-id must be a valid number' });
+
+    if (typeof userId !== 'string' || userId.length < 5) {
+       return res.status(400).json({ error: 'x-user-id must be a valid string ID' });
     }
     
     const today = new Date().toISOString().split('T')[0];
     const existing = await prisma.counter.findFirst({ 
       where: { 
-        userId: userIdNum, 
+        userId: userId, 
         date: new Date(today) 
       } 
     });
@@ -277,6 +271,12 @@ app.use((err, req, res, next) => {
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
+
+app.post('/logout', (req, res) => {
+  console.log('User logged out:', req.headers['x-user-id'] || 'unknown');
+  res.json({ message: 'Logout successful' });
+});
+
 
 app.listen(PORT, () => {
   console.log(`Backend running on port ${PORT}`);
